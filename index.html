@@ -241,13 +241,18 @@
     }
 
     function checkForSavedLogin() {
-      const savedData = localStorage.getItem('belkaPayUser');
-      if (savedData) {
-        const { nickname, password } = JSON.parse(savedData);
-        document.getElementById('nickname').value = nickname;
-        document.getElementById('password').value = password;
-        login(true); // Автоматический вход
-      } else {
+      try {
+        const savedData = localStorage.getItem('belkaPayUser');
+        if (savedData) {
+          const { nickname, password } = JSON.parse(savedData);
+          document.getElementById('nickname').value = nickname;
+          document.getElementById('password').value = password;
+          login(true); // Автоматический вход
+        } else {
+          showWelcome();
+        }
+      } catch (e) {
+        console.error("Ошибка при проверке сохранённого логина:", e);
         showWelcome();
       }
     }
@@ -282,15 +287,29 @@
         return;
       }
 
-      const users = JSON.parse(localStorage.getItem('belkaPayUsers') || '[]');
+      let users = [];
+      try {
+        const usersStr = localStorage.getItem('belkaPayUsers');
+        users = usersStr ? JSON.parse(usersStr) : [];
+      } catch (e) {
+        console.error("Ошибка при чтении пользователей:", e);
+        users = [];
+      }
+
       if (users.some(u => u.nickname === nickname)) {
         document.getElementById('regMessage').innerText = '❌ Никнейм уже существует';
         return;
       }
 
       const hashedPassword = simpleHash(password).toString();
-      users.push({ nickname, password: hashedPassword, balance: 100, history: [] }); // начальный баланс + история
-      localStorage.setItem('belkaPayUsers', JSON.stringify(users));
+      users.push({ nickname, password: hashedPassword, balance: 100, history: [] });
+      try {
+        localStorage.setItem('belkaPayUsers', JSON.stringify(users));
+      } catch (e) {
+        console.error("Ошибка при сохранении пользователя:", e);
+        document.getElementById('regMessage').innerText = '❌ Ошибка сохранения';
+        return;
+      }
 
       document.getElementById('regMessage').innerText = '✅ Успешно зарегистрированы!';
       localStorage.setItem('belkaPayUser', JSON.stringify({ nickname, password }));
@@ -310,11 +329,22 @@
         return;
       }
 
-      const users = JSON.parse(localStorage.getItem('belkaPayUsers') || '[]');
-      const user = users.find(u => u.nickname === nickname && u.password === simpleHash(password).toString());
+      let users = [];
+      try {
+        const usersStr = localStorage.getItem('belkaPayUsers');
+        users = usersStr ? JSON.parse(usersStr) : [];
+      } catch (e) {
+        console.error("Ошибка при чтении пользователей:", e);
+        if (!auto) {
+          document.getElementById('message').innerText = '❌ Ошибка при загрузке данных';
+        }
+        return;
+      }
+
+      const hashedPassword = simpleHash(password).toString();
+      const user = users.find(u => u.nickname === nickname && u.password === hashedPassword);
 
       if (user) {
-        // Сохраняем логин
         localStorage.setItem('belkaPayUser', JSON.stringify({ nickname, password }));
         document.getElementById('userNickname').innerText = nickname;
         document.getElementById('welcomeContainer').classList.add('hidden');
@@ -330,13 +360,30 @@
     }
 
     function loadWallet() {
-      const savedUser = JSON.parse(localStorage.getItem('belkaPayUser'));
-      const users = JSON.parse(localStorage.getItem('belkaPayUsers') || '[]');
-      const user = users.find(u => u.nickname === savedUser.nickname);
+      try {
+        const savedUserStr = localStorage.getItem('belkaPayUser');
+        if (!savedUserStr) {
+          console.error("Нет сохранённого пользователя");
+          showWelcome();
+          return;
+        }
+        const savedUser = JSON.parse(savedUserStr);
 
-      if (user) {
-        document.getElementById('balance').innerText = user.balance.toFixed(2) + ' USD';
-        renderHistory(user.history || []);
+        const usersStr = localStorage.getItem('belkaPayUsers');
+        if (!usersStr) {
+          console.error("Нет сохранённых пользователей");
+          showWelcome();
+          return;
+        }
+        const users = JSON.parse(usersStr);
+
+        const user = users.find(u => u.nickname === savedUser.nickname);
+        if (user) {
+          document.getElementById('balance').innerText = user.balance.toFixed(2) + ' USD';
+          renderHistory(user.history || []);
+        }
+      } catch (e) {
+        console.error("Ошибка при загрузке кошелька:", e);
       }
     }
 
@@ -366,37 +413,53 @@
         return;
       }
 
-      const savedUser = JSON.parse(localStorage.getItem('belkaPayUser'));
-      const users = JSON.parse(localStorage.getItem('belkaPayUsers') || '[]');
+      try {
+        const savedUserStr = localStorage.getItem('belkaPayUser');
+        if (!savedUserStr) {
+          alert("Ошибка: вы не авторизованы");
+          return;
+        }
+        const savedUser = JSON.parse(savedUserStr);
 
-      const fromUser = users.find(u => u.nickname === savedUser.nickname);
-      const toUser = users.find(u => u.nickname === toNickname);
+        const usersStr = localStorage.getItem('belkaPayUsers');
+        if (!usersStr) {
+          alert("Ошибка: нет данных пользователей");
+          return;
+        }
+        const users = JSON.parse(usersStr);
 
-      if (!toUser) {
-        alert('Пользователь не найден');
-        return;
+        const fromUser = users.find(u => u.nickname === savedUser.nickname);
+        const toUser = users.find(u => u.nickname === toNickname);
+
+        if (!toUser) {
+          alert('Пользователь не найден');
+          return;
+        }
+
+        if (fromUser.balance < amount) {
+          alert('Недостаточно средств');
+          return;
+        }
+
+        fromUser.balance -= amount;
+        toUser.balance += amount;
+
+        const now = new Date().toLocaleString();
+
+        if (!fromUser.history) fromUser.history = [];
+        if (!toUser.history) toUser.history = [];
+
+        fromUser.history.push({ type: 'Отправлено', amount: -amount, to: toNickname, date: now });
+        toUser.history.push({ type: 'Получено', amount: amount, from: savedUser.nickname, date: now });
+
+        localStorage.setItem('belkaPayUsers', JSON.stringify(users));
+        loadWallet();
+        document.getElementById('transferAmount').value = '';
+        document.getElementById('transferTo').value = '';
+      } catch (e) {
+        console.error("Ошибка при переводе:", e);
+        alert("Ошибка при выполнении перевода");
       }
-
-      if (fromUser.balance < amount) {
-        alert('Недостаточно средств');
-        return;
-      }
-
-      fromUser.balance -= amount;
-      toUser.balance += amount;
-
-      const now = new Date().toLocaleString();
-
-      if (!fromUser.history) fromUser.history = [];
-      if (!toUser.history) toUser.history = [];
-
-      fromUser.history.push({ type: 'Отправлено', amount: -amount, to: toNickname, date: now });
-      toUser.history.push({ type: 'Получено', amount: amount, from: savedUser.nickname, date: now });
-
-      localStorage.setItem('belkaPayUsers', JSON.stringify(users));
-      loadWallet();
-      document.getElementById('transferAmount').value = '';
-      document.getElementById('transferTo').value = '';
     }
 
     function logout() {
