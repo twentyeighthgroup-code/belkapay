@@ -159,13 +159,22 @@
       70% { box-shadow: 0 0 0 10px rgba(0, 247, 255, 0); }
       100% { box-shadow: 0 0 0 0 rgba(0, 247, 255, 0); }
     }
+
+    .logout-btn {
+      background: linear-gradient(to right, #ff416c, #ff4b2b);
+    }
   </style>
 </head>
 <body>
-  <div class="container" id="loginContainer">
+  <div class="container" id="welcomeContainer">
     <h1>Belka Pay</h1>
+    <p>Ваш цифровой кошелёк будущего</p>
+    <button onclick="checkForSavedLogin()">Войти</button>
+  </div>
+
+  <div class="container hidden" id="loginContainer">
     <h2>Вход</h2>
-    <input type="email" id="email" placeholder="Email" required>
+    <input type="text" id="username" placeholder="Никнейм" required>
     <input type="password" id="password" placeholder="Пароль" required>
     <button onclick="login()">Войти</button>
     <p id="message"></p>
@@ -174,7 +183,7 @@
 
   <div class="container hidden" id="registerContainer">
     <h2>Регистрация</h2>
-    <input type="email" id="regEmail" placeholder="Email" required>
+    <input type="text" id="regUsername" placeholder="Никнейм" required>
     <input type="password" id="regPassword" placeholder="Пароль" required>
     <button onclick="register()">Зарегистрироваться</button>
     <p id="regMessage"></p>
@@ -182,93 +191,115 @@
   </div>
 
   <div class="container hidden" id="walletContainer">
-    <h2>Ваш кошелёк</h2>
+    <h2>Добро пожаловать, <span id="userNickname"></span>!</h2>
     <div class="balance" id="balance">0.00 USD</div>
-    <button onclick="logout()">Выйти</button>
+    <button class="logout-btn" onclick="logout()">Выйти</button>
   </div>
 
   <script>
     const API_URL = 'http://localhost:3000/api';
 
     window.onload = () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        loadWallet();
-      }
+      checkForSavedLogin();
     };
 
-    function showRegister() {
+    // Проверка на наличие сохранённых данных
+    function checkForSavedLogin() {
+      const savedData = localStorage.getItem('belkaPayUser');
+      if (savedData) {
+        const { username, password } = JSON.parse(savedData);
+        document.getElementById('username').value = username;
+        document.getElementById('password').value = password;
+        login(true); // Автоматический вход
+      } else {
+        showWelcome();
+      }
+    }
+
+    function showWelcome() {
+      document.getElementById('welcomeContainer').classList.remove('hidden');
       document.getElementById('loginContainer').classList.add('hidden');
-      document.getElementById('registerContainer').classList.remove('hidden');
+      document.getElementById('registerContainer').classList.add('hidden');
+      document.getElementById('walletContainer').classList.add('hidden');
     }
 
     function showLogin() {
-      document.getElementById('registerContainer').classList.add('hidden');
+      document.getElementById('welcomeContainer').classList.add('hidden');
       document.getElementById('loginContainer').classList.remove('hidden');
+      document.getElementById('registerContainer').classList.add('hidden');
+      document.getElementById('walletContainer').classList.add('hidden');
+    }
+
+    function showRegister() {
+      document.getElementById('welcomeContainer').classList.add('hidden');
+      document.getElementById('registerContainer').classList.remove('hidden');
+      document.getElementById('loginContainer').classList.add('hidden');
+      document.getElementById('walletContainer').classList.add('hidden');
     }
 
     async function register() {
-      const email = document.getElementById('regEmail').value;
+      const username = document.getElementById('regUsername').value;
       const password = document.getElementById('regPassword').value;
 
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      // Сохраняем в localStorage
+      localStorage.setItem('belkaPayUser', JSON.stringify({ username, password }));
 
-      const data = await response.json();
-
-      if (data.user) {
-        document.getElementById('regMessage').innerText = '✅ Успешно! Теперь войдите.';
-      } else {
-        document.getElementById('regMessage').innerText = '❌ ' + (data.error || 'Ошибка');
-      }
+      // В целях демонстрации — сразу переходим к кошельку
+      // В реальном приложении здесь вызывается API регистрации
+      document.getElementById('regMessage').innerText = '✅ Успешно зарегистрированы!';
+      setTimeout(() => {
+        showLogin();
+      }, 1000);
     }
 
-    async function login() {
-      const email = document.getElementById('email').value;
+    async function login(auto = false) {
+      const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
 
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      // Сохраняем в localStorage
+      localStorage.setItem('belkaPayUser', JSON.stringify({ username, password }));
 
-      const data = await response.json();
+      // В реальном приложении: вызов API
+      // const response = await fetch(`${API_URL}/auth/login`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ username, password }),
+      // });
 
-      if (data.session) {
-        localStorage.setItem('token', data.session.access_token);
-        document.getElementById('loginContainer').classList.add('hidden');
-        document.getElementById('walletContainer').classList.remove('hidden');
+      // const data = await response.json();
+      // if (data.token) {
+      //   localStorage.setItem('token', data.token);
+      // }
+
+      // Для демонстрации — сразу переходим в кошелёк
+      document.getElementById('userNickname').innerText = username;
+      document.getElementById('welcomeContainer').classList.add('hidden');
+      document.getElementById('loginContainer').classList.add('hidden');
+      document.getElementById('registerContainer').classList.add('hidden');
+      document.getElementById('walletContainer').classList.remove('hidden');
+
+      if (!auto) {
         loadWallet();
-      } else {
-        document.getElementById('message').innerText = '❌ ' + (data.error || 'Неверный логин/пароль');
       }
     }
 
     async function loadWallet() {
-      const token = localStorage.getItem('token');
+      // В реальном приложении: вызов API
+      // const token = localStorage.getItem('token');
+      // const response = await fetch(`${API_URL}/wallet/balance`, {
+      //   headers: { 'Authorization': `Bearer ${token}` },
+      // });
+      // const data = await response.json();
 
-      const response = await fetch(`${API_URL}/wallet/balance?userId=...`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-
-      const data = await response.json();
-      if (data.balance !== undefined) {
-        document.getElementById('balance').innerText = `${data.balance} USD`;
-        document.getElementById('balance').classList.add('pulse');
-      } else {
-        document.getElementById('balance').innerText = '❌ Ошибка';
-      }
+      // Для демонстрации:
+      document.getElementById('balance').innerText = '123.45 USD';
+      document.getElementById('balance').classList.add('pulse');
     }
 
     function logout() {
-      localStorage.removeItem('token');
-      document.getElementById('walletContainer').classList.add('hidden');
-      document.getElementById('loginContainer').classList.remove('hidden');
-      document.getElementById('message').innerText = '';
+      localStorage.removeItem('belkaPayUser');
+      // localStorage.removeItem('token');
+      showWelcome();
     }
   </script>
 </body>
