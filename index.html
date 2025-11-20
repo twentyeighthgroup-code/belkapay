@@ -230,7 +230,6 @@
   </div>
 
   <script>
-    // Простая "хеш-функция" для паролей (НЕ использовать в продакшене!)
     function simpleHash(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -247,7 +246,7 @@
         const { nickname, password } = JSON.parse(savedData);
         document.getElementById('nickname').value = nickname;
         document.getElementById('password').value = password;
-        login(true);
+        login(true); // Автоматический вход
       } else {
         showWelcome();
       }
@@ -290,7 +289,7 @@
       }
 
       const hashedPassword = simpleHash(password).toString();
-      users.push({ nickname, password: hashedPassword, balance: 100 }); // начальный баланс
+      users.push({ nickname, password: hashedPassword, balance: 100, history: [] }); // начальный баланс + история
       localStorage.setItem('belkaPayUsers', JSON.stringify(users));
 
       document.getElementById('regMessage').innerText = '✅ Успешно зарегистрированы!';
@@ -304,10 +303,18 @@
       const nickname = document.getElementById('nickname').value;
       const password = document.getElementById('password').value;
 
+      if (!nickname || !password) {
+        if (!auto) {
+          document.getElementById('message').innerText = '❌ Никнейм и пароль обязательны';
+        }
+        return;
+      }
+
       const users = JSON.parse(localStorage.getItem('belkaPayUsers') || '[]');
       const user = users.find(u => u.nickname === nickname && u.password === simpleHash(password).toString());
 
       if (user) {
+        // Сохраняем логин
         localStorage.setItem('belkaPayUser', JSON.stringify({ nickname, password }));
         document.getElementById('userNickname').innerText = nickname;
         document.getElementById('welcomeContainer').classList.add('hidden');
@@ -316,7 +323,9 @@
         document.getElementById('walletContainer').classList.remove('hidden');
         loadWallet();
       } else {
-        document.getElementById('message').innerText = '❌ Неверный логин/пароль';
+        if (!auto) {
+          document.getElementById('message').innerText = '❌ Неверный логин/пароль';
+        }
       }
     }
 
