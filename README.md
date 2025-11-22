@@ -14,15 +14,23 @@
 ## 🛠 Стек технологий
 
 - **Frontend**: HTML/CSS/JS (PWA)
-- **Backend**: Next.js + Vercel Functions
+- **Backend**: Next.js + Vercel Functions (опционально)
 - **Database**: Supabase
 - **Auth**: Supabase Auth
 - **Payments**: Stripe
-- **Deploy**: Vercel, GitHub Actions
 
-## 🚀 Запуск
+## 📦 Сборка мобильного приложения
 
-### Бэкенд
+- Собранное веб-приложение из `web/` может быть конвертировано в APK/IPA с помощью:
+  - Capacitor
+  - TWA (Trusted Web Activities)
+  - Cordova
 
-1. Установите зависимости: `cd backend && npm install`
-2. Настройте `.env.local`:
+## 📄 Документация
+
+- [API](./docs/API.md)
+- [Security](./SECURITY.md)
+
+## 📄 Лицензия
+
+MIT
