@@ -1,0 +1,19 @@
+# Backend
+/node_modules/
+.next/
+.vercel/
+
+# Frontend
+/build/
+/dist/
+/ios/
+/android/
+
+# Secrets
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
