@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Belka Pay — NFC Платежи</title>
+  <style>
+    :root {
+      --orange: #FF5722;
+      --turquoise: #009688;
+      --ink: #0E1726;
+      --bg: #f6f7fb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: #333;
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    header {
+      background: var(--orange); color: #fff; text-align: center;
+      padding: 24px 16px;
+    }
+    header h1 { margin: 0 0 6px; font-size: 24px; font-weight: 700; }
+    header p { margin: 0; opacity: 0.9; }
+    .container {
+      max-width: 520px; margin: 28px auto; padding: 20px;
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 12px 24px rgba(14,23,38,0.08);
+    }
+    h2 { color: var(--turquoise); margin: 0 0 12px; font-size: 18px; }
+    .field { margin-bottom: 16px; }
+    label { display: block; margin-bottom: 8px; color: #555; font-weight: 600; }
+    select, input, button {
+      width: 100%; padding: 12px 14px; font-size: 16px;
+      border-radius: 12px;
+    }
+    select, input {
+      border: 1px solid #d7dbe3;
+      background: #fff;
+    }
+    .row { display: flex; gap: 12px; }
+    .row .col { flex: 1; }
+    button.primary {
+      border: none; color: #fff; cursor: pointer; font-weight: 700;
+      background: var(--turquoise);
+      transition: transform .06s ease, background .2s ease;
+    }
+    button.primary:hover { background: #00796B; }
+    button.primary:active { transform: translateY(1px); }
+    .note {
+      margin-top: 8px; font-size: 13px; color: #667085;
+    }
+    .notification {
+      display: none; margin-top: 16px; padding: 12px;
+      background: #C8E6C9; color: #256029; border-radius: 12px; text-align: center;
+      font-weight: 600;
+    }
+    .history { margin-top: 28px; }
+    .history h3 { margin: 0 0 10px; font-size: 16px; color: #374151; }
+    .transaction {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 12px; border: 1px solid #eef0f5; border-radius: 12px;
+      margin-bottom: 8px; background: #fafbff;
+    }
+    .tx-left { display: flex; gap: 10px; align-items: center; }
+    .chip {
+      display: inline-block; padding: 4px 8px; border-radius: 999px;
+      font-size: 12px; background: rgba(0,150,136,0.1); color: var(--turquoise);
+      font-weight: 600;
+    }
+    .empty { padding: 14px; border: 1px dashed #d7dbe3; border-radius: 12px; text-align: center; color: #667085; }
+    .footer { text-align: center; margin: 20px 0; color: #98a2b3; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Belka Pay 🐿️</h1>
+    <p>Платежи в один прыжок — только через NFC</p>
+  </header>
+
+  <div class="container">
+    <h2>Настройки оплаты</h2>
+
+    <div class="field">
+      <label for="cardSelect">Карта для оплаты</label>
+      <select id="cardSelect">
+        <option value="Visa **** 1234">Visa **** 1234</option>
+        <option value="Mastercard **** 5678">Mastercard **** 5678</option>
+        <option value="Мир **** 9012">Мир **** 9012</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <div class="col field">
+        <label for="amount">Сумма (BYN)</label>
+        <input id="amount" type="number" min="0.01" step="0.01" placeholder="25.00" value="25.00" />
+      </div>
+      <div class="col field">
+        <label for="merchant">Мерчант</label>
+        <input id="merchant" type="text" placeholder="Demo Merchant" value="Demo Merchant" />
+      </div>
+    </div>
+
+    <button class="primary" id="payBtn">Оплатить через NFC</button>
+    <div class="note">Имитация: отображаем успешную оплату и запись в историю. Реальный NFC требует нативной интеграции.</div>
+    <div class="notification" id="notification">✅ Оплата прошла успешно!</div>
+
+    <div class="history">
+      <h3>История транзакций</h3>
+      <div id="transactionList">
+        <div class="empty">Пока нет транзакций</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Belka Pay • NFC-only • © 2025</div>
+
+  <script>
+    const payBtn = document.getElementById('payBtn');
+    const cardSelect = document.getElementById('cardSelect');
+    const amountInput = document.getElementById('amount');
+    const merchantInput = document.getElementById('merchant');
+    const notification = document.getElementById('notification');
+    const transactionList = document.getElementById('transactionList');
+
+    function addTransaction({ time, card, amount, merchant }) {
+      if (transactionList.firstElementChild && transactionList.firstElementChild.classList.contains('empty')) {
+        transactionList.innerHTML = '';
+      }
+      const row = document.createElement('div');
+      row.className = 'transaction';
+
+      const left = document.createElement('div');
+      left.className = 'tx-left';
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = card;
+      const title = document.createElement('div');
+      title.innerHTML = `<strong>${amount.toFixed(2)} BYN</strong> — ${merchant}`;
+      left.appendChild(chip);
+      left.appendChild(title);
+
+      const right = document.createElement('div');
+      right.style.color = '#98a2b3';
+      right.textContent = time;
+
+      row.appendChild(left);
+      row.appendChild(right);
+      transactionList.prepend(row);
+    }
+
+    function showNotification(text) {
+      notification.textContent = text;
+      notification.style.display = 'block';
+      setTimeout(() => { notification.style.display = 'none'; }, 2500);
+    }
+
+    payBtn.addEventListener('click', async () => {
+      const card = cardSelect.value;
+      const amount = parseFloat(amountInput.value || '0');
+      const merchant = (merchantInput.value || 'Merchant').trim();
+
+      if (!amount || amount <= 0) {
+        showNotification('⚠️ Укажите корректную сумму');
+        return;
+      }
+
+      // Simulated NFC payment
+      payBtn.disabled = true;
+      payBtn.textContent = 'Оплата...';
+      await new Promise(r => setTimeout(r, 900));
+
+      const now = new Date();
+      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      addTransaction({ time, card, amount, merchant });
+      showNotification(`✅ Оплата ${amount.toFixed(2)} BYN с карты ${card} прошла успешно`);
+
+      payBtn.disabled = false;
+      payBtn.textContent = 'Оплатить через NFC';
+    });
+  </script>
+</body>
+</html>
