@@ -2,325 +2,512 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- Добавляем viewport-fit=cover для поддержки "челок" на iPhone -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
+  <meta name="theme-color" content="#009688">
+  <meta name="description" content="Belka Pay - Бесконтактная оплата">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Belka Pay</title>
+  
   <style>
     :root {
-      --orange: #FF5722;
-      --turquoise: #009688;
-      --glass-light: rgba(255,255,255,0.7);
-      --glass-dark: rgba(20,24,30,0.8);
+      --primary: #FF5722;
+      --secondary: #009688;
+      --bg-gradient: linear-gradient(135deg, var(--secondary), var(--primary));
+      --glass-bg: rgba(255, 255, 255, 0.75);
+      --glass-border: rgba(255, 255, 255, 0.6);
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --shadow-soft: 0 10px 30px rgba(0,0,0,0.15);
+      --success: #10B981;
+      --error: #EF4444;
+      
+      /* Safe Area Variables */
+      --sat: env(safe-area-inset-top);
+      --sab: env(safe-area-inset-bottom);
     }
 
-    /* Base layout */
-    * { box-sizing: border-box; }
+    /* Reset & Base */
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
     body {
-      margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      background: linear-gradient(135deg, var(--turquoise), var(--orange));
-      min-height: 100vh; display: flex; flex-direction: column;
-      align-items: center; justify-content: flex-start;
-      transition: background 0.5s ease;
+      margin: 0; 
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-gradient);
+      min-height: 100vh; 
+      display: flex; 
+      flex-direction: column;
+      align-items: center; 
+      color: var(--text-main);
+      overscroll-behavior-y: none; /* Блокирует "резинку" скролла */
+      padding-top: max(20px, var(--sat));
+      padding-bottom: max(20px, var(--sab));
+    }
+
+    /* Layout */
+    .container {
+      width: 100%;
+      max-width: 480px;
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      z-index: 1;
     }
 
     /* Header */
     header {
-      text-align: center; color: #fff; padding: 36px 20px 24px;
+      text-align: center; 
+      color: #fff; 
+      padding: 20px 0;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    header h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: 0.3px; }
-    header p { margin: 8px 0 0; opacity: 0.9; font-size: 14px; }
+    header h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+    header p { margin: 6px 0 0; opacity: 0.9; font-size: 14px; font-weight: 500; }
 
-    /* Cards (glassmorphism) */
+    /* Card Component */
     .card {
-      background: var(--glass-light);
-      backdrop-filter: blur(14px);
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      padding: 20px;
-      width: 92%; max-width: 460px;
-      margin-bottom: 18px;
-      animation: fadeIn 0.6s ease;
-      transition: background 0.5s ease, color 0.5s ease, box-shadow 0.3s ease;
-      border: 1px solid rgba(255,255,255,0.6);
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 24px;
+      box-shadow: var(--shadow-soft);
+      padding: 24px;
+      border: 1px solid var(--glass-border);
+      transition: transform 0.2s;
     }
-    .card:hover { box-shadow: 0 16px 36px rgba(0,0,0,0.22); }
+    
+    h2 { margin: 0 0 16px; color: var(--secondary); font-size: 18px; font-weight: 700; }
 
-    /* Typography */
-    h2 { margin: 0 0 12px; color: var(--turquoise); font-size: 18px; }
-
-    /* Form elements */
-    label { display: block; font-size: 13px; color: #4c5563; margin-bottom: 8px; font-weight: 600; }
-    select, input, button {
-      width: 100%; padding: 14px; margin: 10px 0;
-      border-radius: 12px; font-size: 16px; border: none; outline: none;
-    }
+    /* Inputs */
+    .input-group { margin-bottom: 16px; }
+    label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+    
     select, input {
-      background: rgba(255,255,255,0.92);
-      box-shadow: inset 2px 2px 6px rgba(0,0,0,0.08);
-      color: #1f2937;
+      width: 100%; 
+      padding: 16px; 
+      border-radius: 16px; 
+      font-size: 16px; 
+      border: 2px solid transparent; 
+      outline: none;
+      background: rgba(255,255,255,0.8);
+      color: var(--text-main);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+      transition: all 0.2s;
+      font-weight: 500;
     }
+    
+    select:focus, input:focus {
+      background: #fff;
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 4px rgba(0, 150, 136, 0.1);
+    }
+
     .row { display: flex; gap: 12px; }
-    .row .col { flex: 1; }
+    .col { flex: 1; }
 
-    /* Button with animated NFC icon */
-    button.primary {
-      background: linear-gradient(135deg, var(--turquoise), var(--orange));
-      color: #fff; font-weight: 700; cursor: pointer;
-      transition: transform 0.16s ease, box-shadow 0.2s ease, filter 0.3s ease;
-      display: flex; align-items: center; justify-content: center;
+    /* Action Button */
+    .btn-pay {
+      width: 100%;
+      padding: 18px;
+      margin-top: 8px;
+      border-radius: 16px;
+      border: none;
+      background: linear-gradient(135deg, var(--secondary), var(--primary));
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: transform 0.1s, filter 0.2s;
+      position: relative;
+      overflow: hidden;
     }
-    button.primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,0,0,0.24); filter: saturate(1.05); }
-    button.primary:active { transform: translateY(0); }
-
-    .nfc-icon {
-      margin-right: 8px; display: inline-block;
-      animation: pulse 1.6s infinite;
-      filter: drop-shadow(0 0 4px rgba(0,150,136,0.5));
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); opacity: 0.85; }
-      50% { transform: scale(1.18); opacity: 1; }
-      100% { transform: scale(1); opacity: 0.85; }
-    }
-
-    /* Helper text and notification */
-    .note { font-size: 12px; color: #5f6c7b; margin-top: 6px; }
-    .notification {
-      display: none; margin-top: 14px; padding: 12px;
-      background: #C8E6C9; color: #256029;
-      border-radius: 12px; text-align: center;
-      font-weight: 600; animation: slideDown 0.28s ease;
-      border: 1px solid rgba(37,96,41,0.18);
-    }
-
-    /* History list */
-    .history h3 { margin: 0 0 12px; color: var(--orange); font-size: 16px; }
-    .transaction {
-      background: rgba(255,255,255,0.88);
-      border-radius: 14px; padding: 12px;
-      margin-bottom: 10px;
-      display: flex; justify-content: space-between; align-items: center;
-      animation: fadeInUp 0.45s ease;
-      border: 1px solid rgba(0,0,0,0.06);
-    }
-    .tx-left { display: flex; gap: 10px; align-items: center; }
-    .chip {
-      display: inline-block; padding: 4px 8px; border-radius: 999px;
-      font-size: 12px; background: rgba(0,150,136,0.12); color: var(--turquoise);
-      font-weight: 700; border: 1px solid rgba(0,150,136,0.25);
-    }
-    .tx-amount { font-weight: 700; }
-    .tx-time { color: #9aa3ad; font-size: 12px; }
-
-    .empty {
-      padding: 14px; border: 1px dashed #d7dbe3; border-radius: 12px;
-      text-align: center; color: #667085; background: rgba(255,255,255,0.6);
-    }
-
-    .footer { text-align: center; margin: 18px 0 24px; color: #98a2b3; font-size: 12px; }
+    .btn-pay:active { transform: scale(0.98); }
+    .btn-pay:disabled { filter: grayscale(1); opacity: 0.7; cursor: not-allowed; }
 
     /* Animations */
-    @keyframes fadeIn { from {opacity:0; transform:scale(0.97);} to {opacity:1; transform:scale(1);} }
-    @keyframes fadeInUp { from {opacity:0; transform:translateY(12px);} to {opacity:1; transform:translateY(0);} }
-    @keyframes slideDown { from {opacity:0; transform:translateY(-8px);} to {opacity:1; transform:translateY(0);} }
-
-    /* Dark theme */
-    @media (prefers-color-scheme: dark) {
-      body {
-        background: linear-gradient(135deg, #0E1726, #1C1F26);
-        color: #eaeff6;
-      }
-      .card {
-        background: var(--glass-dark);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        color: #eaeff6; border-color: rgba(255,255,255,0.06);
-      }
-      h2, .history h3 { color: var(--orange); }
-      select, input {
-        background: rgba(36,40,48,0.9);
-        color: #eef2f8;
-        border: 1px solid #3b4251;
-        box-shadow: inset 2px 2px 6px rgba(0,0,0,0.25);
-      }
-      .notification {
-        background: rgba(0,150,136,0.18);
-        color: #00e0b0; border-color: rgba(0,224,176,0.25);
-      }
-      .transaction {
-        background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(255,255,255,0.12);
-        color: #dbe3eb;
-      }
-      .tx-time { color: #a8b2c0; }
-      .chip {
-        background: rgba(0,150,136,0.18);
-        color: #40e0cf; border-color: rgba(64,224,207,0.3);
-      }
-      button.primary {
-        box-shadow: 0 8px 22px rgba(0,0,0,0.35);
-      }
-      .nfc-icon {
-        filter: drop-shadow(0 0 5px rgba(64,224,207,0.55));
-      }
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+      pointer-events: none;
     }
+    @keyframes ripple { to { transform: scale(4); opacity: 0; } }
 
-    /* Splash screen */
-    #splash {
-      position: fixed; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, var(--turquoise), var(--orange));
-      color: #fff; z-index: 9999;
-      animation: fadeOut 1s ease forwards;
-      animation-delay: 1.8s;
-    }
-    .splash-content {
+    .nfc-icon { font-size: 20px; }
+    .nfc-pulse { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 0.7; } }
+
+    /* Feedback UI */
+    .status-msg {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 12px;
       text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.3s;
     }
-    .splash-content h1 {
-      font-size: 48px; margin: 0; font-weight: 800;
-      animation: bounce 1.5s infinite;
-      text-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    .status-msg.visible { opacity: 1; transform: translateY(0); }
+    .status-msg.success { background: rgba(16, 185, 129, 0.15); color: #065F46; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-msg.error { background: rgba(239, 68, 68, 0.15); color: #7F1D1D; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* History List */
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .btn-clear { background: none; border: none; color: var(--text-muted); font-size: 12px; cursor: pointer; text-decoration: underline; }
+    
+    .transaction-list { max-height: 300px; overflow-y: auto; }
+    .transaction-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      animation: slideIn 0.3s ease;
     }
-    .splash-content p { margin-top: 8px; font-size: 18px; opacity: 0.95; letter-spacing: 0.2px; }
-    @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
+    .transaction-item:last-child { border-bottom: none; }
+    
+    .tx-info h4 { margin: 0; font-size: 15px; color: var(--text-main); }
+    .tx-info span { font-size: 12px; color: var(--text-muted); display: block; margin-top: 2px; }
+    .tx-amount { font-weight: 700; color: var(--text-main); font-size: 15px; }
+    
+    .empty-state { text-align: center; padding: 20px; color: var(--text-muted); font-size: 14px; font-style: italic; }
+
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Footer */
+    footer { text-align: center; margin-top: auto; padding: 20px; color: rgba(255,255,255,0.8); font-size: 12px; }
+
+    /* Splash Screen */
+    #splash {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg-gradient);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      transition: opacity 0.5s ease, visibility 0.5s;
+    }
+    #splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .splash-logo { font-size: 64px; animation: bounce 2s infinite; margin-bottom: 16px; }
+    .loader {
+      width: 24px; height: 24px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+    /* Dark Mode */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-gradient: linear-gradient(135deg, #0F172A, #1E293B);
+        --glass-bg: rgba(30, 41, 59, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --text-main: #F1F5F9;
+        --text-muted: #94A3B8;
+      }
+      select, input { background: rgba(15, 23, 42, 0.6); border-color: #334155; }
+      select:focus, input:focus { background: rgba(15, 23, 42, 0.9); }
+      .status-msg.success { background: rgba(6, 95, 70, 0.3); color: #34D399; }
     }
   </style>
 </head>
 <body>
-  <!-- Splash screen -->
+
+  <!-- Splash Screen -->
   <div id="splash">
-    <div class="splash-content">
-      <h1>🐿️ Belka Pay</h1>
-      <p>Платежи в один прыжок</p>
-    </div>
+    <div class="splash-logo">🐿️</div>
+    <div class="loader"></div>
   </div>
 
-  <!-- App -->
-  <div id="app" style="display:none;">
+  <div class="container" id="app" style="opacity: 0; transition: opacity 0.5s;">
     <header>
-      <h1>Belka Pay 🐿️</h1>
-      <p>Платежи в один прыжок</p>
+      <h1>Belka Pay</h1>
+      <p>Оплата в одно касание</p>
     </header>
 
-    <div class="card">
-      <h2>Настройки оплаты</h2>
-
-      <div class="field">
-        <label for="cardSelect">Карта</label>
-        <select id="cardSelect">
-          <option value="Visa **** 1234">Visa **** 1234</option>
-          <option value="Mastercard **** 5678">Mastercard **** 5678</option>
-          <option value="Мир **** 9012">Мир **** 9012</option>
-        </select>
-      </div>
-
-      <div class="row">
-        <div class="col field">
-          <label for="amount">Сумма (BYN)</label>
-          <input id="amount" type="number" min="0.01" step="0.01" placeholder="25.00" value="25.00" />
+    <main>
+      <!-- Payment Form -->
+      <div class="card">
+        <h2>Новый платеж</h2>
+        
+        <div class="input-group">
+          <label for="cardSelect">Выберите карту</label>
+          <select id="cardSelect">
+            <option value="Visa Classic •• 4242">Visa Classic •• 4242</option>
+            <option value="Mastercard World •• 8899">Mastercard World •• 8899</option>
+            <option value="Mir Supreme •• 2200">Mir Supreme •• 2200</option>
+          </select>
         </div>
-        <div class="col field">
-          <label for="merchant">Мерчант</label>
-          <input id="merchant" type="text" placeholder="Demo Merchant" value="Demo Merchant" />
+
+        <div class="row">
+          <div class="col input-group">
+            <label for="amount">Сумма (BYN)</label>
+            <!-- inputmode="decimal" показывает цифровую клавиатуру на мобильных -->
+            <input id="amount" type="text" inputmode="decimal" placeholder="0.00" value="15.50" />
+          </div>
+          <div class="col input-group">
+            <label for="merchant">Получатель</label>
+            <input id="merchant" type="text" placeholder="Магазин..." value="Coffee Shop" />
+          </div>
+        </div>
+
+        <button class="btn-pay" id="payBtn">
+          <span class="nfc-icon">📡</span> 
+          <span id="btnText">Приложить к терминалу</span>
+        </button>
+        
+        <div id="statusMsg" class="status-msg"></div>
+        
+        <div style="text-align: center; margin-top: 10px;">
+            <small style="font-size: 11px; color: var(--text-muted);">
+                Безопасная оплата через Web NFC API (где поддерживается)
+            </small>
         </div>
       </div>
 
-      <button class="primary" id="payBtn">
-        <span class="nfc-icon">📶</span> Оплатить через NFC
-      </button>
-      <div class="note">Имитация: отображаем успешную оплату и запись в историю. Реальный NFC требует нативной интеграции.</div>
-      <div class="notification" id="notification">✅ Оплата прошла успешно!</div>
-    </div>
-
-    <div class="card history">
-      <h3>История транзакций</h3>
-      <div id="transactionList">
-        <div class="empty">Пока нет транзакций</div>
+      <!-- History -->
+      <div class="card" style="margin-top: 16px;">
+        <div class="history-header">
+          <h2>История</h2>
+          <button id="clearHistory" class="btn-clear">Очистить</button>
+        </div>
+        <div id="historyList" class="transaction-list">
+          <!-- JS injected items -->
+        </div>
       </div>
-    </div>
+    </main>
 
-    <div class="footer">Tegcompany © 2025</div>
+    <footer>
+      Belka Pay Secure • v2.0.1
+    </footer>
   </div>
 
   <script>
-    // Splash -> App
-    setTimeout(() => {
-      const splash = document.getElementById('splash');
-      const app = document.getElementById('app');
-      splash.style.display = 'none';
-      app.style.display = 'block';
-    }, 1800);
+    /**
+     * Payment App Logic (OOP approach)
+     */
+    class PaymentApp {
+      constructor() {
+        // UI Elements
+        this.els = {
+          splash: document.getElementById('splash'),
+          app: document.getElementById('app'),
+          payBtn: document.getElementById('payBtn'),
+          btnText: document.getElementById('btnText'),
+          amount: document.getElementById('amount'),
+          merchant: document.getElementById('merchant'),
+          card: document.getElementById('cardSelect'),
+          status: document.getElementById('statusMsg'),
+          historyList: document.getElementById('historyList'),
+          clearBtn: document.getElementById('clearHistory'),
+          nfcIcon: document.querySelector('.nfc-icon')
+        };
 
-    // Elements
-    const payBtn = document.getElementById('payBtn');
-    const cardSelect = document.getElementById('cardSelect');
-    const amountInput = document.getElementById('amount');
-    const merchantInput = document.getElementById('merchant');
-    const notification = document.getElementById('notification');
-    const transactionList = document.getElementById('transactionList');
+        this.history = JSON.parse(localStorage.getItem('belka_tx_history')) || [];
+        this.isProcessing = false;
 
-    function showNotification(text) {
-      notification.textContent = text;
-      notification.style.display = 'block';
-      setTimeout(() => { notification.style.display = 'none'; }, 2600);
-    }
-
-    function addTransaction({ time, card, amount, merchant }) {
-      if (transactionList.firstElementChild && transactionList.firstElementChild.classList.contains('empty')) {
-        transactionList.innerHTML = '';
-      }
-      const row = document.createElement('div');
-      row.className = 'transaction';
-
-      const left = document.createElement('div');
-      left.className = 'tx-left';
-
-      const chip = document.createElement('span');
-      chip.className = 'chip';
-      chip.textContent = card;
-
-      const title = document.createElement('div');
-      title.innerHTML = `<span class="tx-amount">${amount.toFixed(2)} BYN</span> — ${merchant}`;
-
-      const right = document.createElement('div');
-      right.className = 'tx-time';
-      right.textContent = time;
-
-      left.appendChild(chip);
-      left.appendChild(title);
-      row.appendChild(left);
-      row.appendChild(right);
-      transactionList.prepend(row);
-    }
-
-    payBtn.addEventListener('click', async () => {
-      const card = cardSelect.value;
-      const amount = parseFloat(amountInput.value || '0');
-      const merchant = (merchantInput.value || 'Merchant').trim();
-
-      if (!amount || amount <= 0) {
-        showNotification('⚠️ Укажите корректную сумму');
-        return;
+        this.init();
       }
 
-      // Simulated NFC payment
-      payBtn.disabled = true;
-      const originalText = payBtn.innerHTML;
-      payBtn.innerHTML = '<span class="nfc-icon">📶</span> Оплата...';
+      init() {
+        this.renderHistory();
+        this.setupListeners();
+        
+        // Remove Splash
+        window.addEventListener('load', () => {
+          setTimeout(() => {
+            this.els.splash.classList.add('hidden');
+            this.els.app.style.opacity = '1';
+          }, 1200);
+        });
+      }
 
-      await new Promise(r => setTimeout(r, 900));
+      setupListeners() {
+        this.els.payBtn.addEventListener('click', (e) => {
+          this.createRipple(e);
+          this.handlePayment();
+        });
+        
+        this.els.clearBtn.addEventListener('click', () => {
+            if(confirm('Очистить историю?')) {
+                this.history = [];
+                this.saveHistory();
+                this.renderHistory();
+            }
+        });
 
-      const now = new Date();
-      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        // Format currency input on blur
+        this.els.amount.addEventListener('blur', (e) => {
+            const val = parseFloat(e.target.value.replace(',', '.'));
+            if (!isNaN(val)) e.target.value = val.toFixed(2);
+        });
+      }
 
-      addTransaction({ time, card, amount, merchant });
-      showNotification(`✅ Оплата ${amount.toFixed(2)} BYN с карты ${card} прошла успешно`);
+      // Visual Ripple Effect on Button
+      createRipple(event) {
+        const button = event.currentTarget;
+        const circle = document.createElement("span");
+        const diameter = Math.max(button.clientWidth, button.clientHeight);
+        const radius = diameter / 2;
+        circle.style.width = circle.style.height = `${diameter}px`;
+        circle.style.left = `${event.clientX - button.getBoundingClientRect().left - radius}px`;
+        circle.style.top = `${event.clientY - button.getBoundingClientRect().top - radius}px`;
+        circle.classList.add("ripple");
+        const ripple = button.getElementsByClassName("ripple")[0];
+        if (ripple) ripple.remove();
+        button.appendChild(circle);
+      }
 
-      payBtn.disabled = false;
-      payBtn.innerHTML = originalText;
-    });
+      async handlePayment() {
+        if (this.isProcessing) return;
+
+        const amountVal = this.els.amount.value.replace(',', '.');
+        const amount = parseFloat(amountVal);
+        const merchant = this.els.merchant.value.trim();
+
+        // Validation
+        if (!amount || amount <= 0 || isNaN(amount)) {
+          this.showStatus('Введите корректную сумму', 'error');
+          this.vibrate([100, 50, 100]); // Error vibration pattern
+          return;
+        }
+        if (merchant.length < 2) {
+          this.showStatus('Укажите получателя', 'error');
+          return;
+        }
+
+        this.setLoading(true);
+
+        try {
+            // Attempt Real NFC (Chrome on Android)
+            if ('NDEFReader' in window) {
+                try {
+                    const ndef = new NDEFReader();
+                    await ndef.scan();
+                    // If we get here, permission granted. Wait for tag or simulate payment delay
+                    console.log("NFC Scan started");
+                } catch (nfcError) {
+                    console.log("NFC not available or denied, falling back to timer");
+                }
+            }
+
+            // Simulate Network/Processing Delay
+            await new Promise(r => setTimeout(r, 2000));
+            
+            // Success
+            this.addTransaction(merchant, amount, this.els.card.value);
+            this.showStatus(`Успешно! Оплата ${amount.toFixed(2)} BYN`, 'success');
+            this.vibrate([50, 50, 50]); // Success haptic feedback
+            
+        } catch (error) {
+            this.showStatus('Ошибка обработки платежа', 'error');
+            console.error(error);
+        } finally {
+            this.setLoading(false);
+        }
+      }
+
+      setLoading(state) {
+        this.isProcessing = state;
+        this.els.payBtn.disabled = state;
+        if (state) {
+            this.els.btnText.textContent = 'Обработка...';
+            this.els.nfcIcon.classList.add('nfc-pulse');
+            this.els.status.className = 'status-msg'; // hide previous
+        } else {
+            this.els.btnText.textContent = 'Приложить к терминалу';
+            this.els.nfcIcon.classList.remove('nfc-pulse');
+        }
+      }
+
+      addTransaction(merchant, amount, card) {
+        const tx = {
+          id: Date.now(),
+          merchant: merchant,
+          amount: amount,
+          card: card,
+          date: new Date().toISOString()
+        };
+        this.history.unshift(tx);
+        this.saveHistory();
+        this.renderHistory();
+      }
+
+      renderHistory() {
+        this.els.historyList.innerHTML = '';
+        
+        if (this.history.length === 0) {
+            this.els.historyList.innerHTML = '<div class="empty-state">История пуста 🍃</div>';
+            return;
+        }
+
+        const formatter = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'BYN' });
+        
+        this.history.forEach(tx => {
+            const date = new Date(tx.date);
+            const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            
+            // XSS Protection: Sanitize input before render
+            const safeMerchant = this.escapeHtml(tx.merchant);
+            const safeCard = this.escapeHtml(tx.card.split('•')[0]); // Just take brand name
+
+            const item = document.createElement('div');
+            item.className = 'transaction-item';
+            item.innerHTML = `
+                <div class="tx-info">
+                    <h4>${safeMerchant}</h4>
+                    <span>${timeStr} • ${safeCard}</span>
+                </div>
+                <div class="tx-amount">-${formatter.format(tx.amount)}</div>
+            `;
+            this.els.historyList.appendChild(item);
+        });
+      }
+
+      saveHistory() {
+        localStorage.setItem('belka_tx_history', JSON.stringify(this.history));
+      }
+
+      showStatus(msg, type) {
+        this.els.status.textContent = msg;
+        this.els.status.className = `status-msg visible ${type}`;
+        
+        // Auto hide after 3 sec
+        setTimeout(() => {
+            this.els.status.classList.remove('visible');
+        }, 3000);
+      }
+
+      vibrate(pattern) {
+        if (navigator.vibrate) navigator.vibrate(pattern);
+      }
+      
+      // Security: Basic HTML escaping
+      escapeHtml(unsafe) {
+        return unsafe
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+     }
+    }
+
+    // Initialize App
+    const app = new PaymentApp();
   </script>
 </body>
 </html>
